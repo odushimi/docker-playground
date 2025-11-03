@@ -11,6 +11,9 @@ RUN npm install --omit=dev
 # Copy app source
 COPY . .
 
+# Create output directory with proper permissions
+RUN mkdir -p output && chown pptruser:pptruser output
+
 # Ensure files are owned by the non-root user used by the base image
 USER pptruser
 
