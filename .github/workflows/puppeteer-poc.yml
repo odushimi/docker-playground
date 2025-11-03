@@ -1,0 +1,52 @@
+name: Puppeteer POC - Build & Run
+
+on:
+  workflow_dispatch: {}
+  push:
+    paths:
+      - 'puppeteer-poc/**'
+      - '.github/workflows/puppeteer-poc.yml'
+
+jobs:
+  build-and-run:
+    name: Build and Run Puppeteer POC
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          cd puppeteer-poc
+          docker build -t puppeteer-poc:ci .
+
+      - name: Create output directory
+        run: |
+          mkdir -p ./puppeteer-poc/output
+
+      - name: Run Puppeteer automation
+        run: |
+          docker run --rm \
+            -v "$(pwd)/puppeteer-poc:/home/pptruser/app/output" \
+            puppeteer-poc:ci
+
+      - name: Check for generated PDF
+        run: |
+          ls -la ./puppeteer-poc/*.pdf || echo "No PDF files found"
+
+      - name: Upload PDF artifact
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: puppeteer-pdf-output
+          path: puppeteer-poc/*.pdf
+          if-no-files-found: warn
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Puppeteer POC Execution Summary" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Workflow completed" >> $GITHUB_STEP_SUMMARY
+          echo "🌐 Navigated to Node.js website and captured Learn page" >> $GITHUB_STEP_SUMMARY
+          echo "📄 Check artifacts for generated PDF" >> $GITHUB_STEP_SUMMARY
